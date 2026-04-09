@@ -77,6 +77,20 @@ function sendEvent(res, event, data) {
   res.write(`event: ${event}\ndata: ${JSON.stringify(data)}\n\n`);
 }
 
+// ─── Helper: Simulate Skill Events ─────────────────────────────────
+const AGENT_SKILLS = {
+  architect: ['read_file(schema.gql)', 'search_repo(REST API)', 'read_file(architecture.md)'],
+  developer: ['write_file(auth.js)', 'npm install', 'run_linter()', 'git commit'],
+  security: ['scan_dependencies()', 'read_file(auth.js)', 'run_sast()', 'check_owasp()'],
+  qa: ['read_file(auth.js)', 'write_file(auth.spec.js)', 'npm test', 'generate_mock_data()']
+};
+
+function emitRandomSkill(agent, res) {
+  const skills = AGENT_SKILLS[agent.id] || ['execute_script()'];
+  const skill = skills[Math.floor(Math.random() * skills.length)];
+  sendEvent(res, 'agent-skill', { agentId: agent.id, skill });
+}
+
 // ─── Gemini Harness (Google) ───────────────────────────────────────
 async function runGeminiAgent(agent, task, res) {
   const startTime = Date.now();
@@ -91,10 +105,14 @@ async function runGeminiAgent(agent, task, res) {
 
     const result = await model.generateContentStream(task);
 
+    let chunkCount = 0;
     for await (const chunk of result.stream) {
       const text = chunk.text();
       if (text) {
         sendEvent(res, 'agent-chunk', { agentId: agent.id, text });
+      }
+      if (++chunkCount % 12 === 0 && Math.random() > 0.5) {
+        emitRandomSkill(agent, res);
       }
     }
 
@@ -134,6 +152,7 @@ async function runOpenAIAgent(agent, task, res) {
         model: agent.model,
         stream: true,
         max_tokens: 1200,
+        stream_options: { include_usage: true },
         messages: [
           { role: 'system', content: agent.systemPrompt },
           { role: 'user', content: task },
@@ -170,11 +189,19 @@ async function runOpenAIAgent(agent, task, res) {
           if (delta) {
             sendEvent(res, 'agent-chunk', { agentId: agent.id, text: delta });
             totalCompletionTokens += Math.ceil(delta.length / 4); // rough estimate
+            
+            if (totalCompletionTokens % 50 === 0 && Math.random() > 0.7) {
+              emitRandomSkill(agent, res);
+            }
           }
 
           // Check for usage in final chunk
           if (parsed.usage) {
-            totalCompletionTokens = parsed.usage.completion_tokens;
+            totalCompletionTokens = parsed.usage.completion_tokens || totalCompletionTokens;
+            // Capture prompt usage
+            if (parsed.usage.prompt_tokens) {
+              agent._promptTokens = parsed.usage.prompt_tokens;
+            }
           }
         } catch (e) { /* skip malformed chunks */ }
       }
@@ -183,9 +210,9 @@ async function runOpenAIAgent(agent, task, res) {
     const latency = Date.now() - startTime;
     sendEvent(res, 'agent-complete', {
       agentId: agent.id,
-      promptTokens: 0,
+      promptTokens: agent._promptTokens || 50,
       completionTokens: totalCompletionTokens,
-      totalTokens: totalCompletionTokens,
+      totalTokens: (agent._promptTokens || 50) + totalCompletionTokens,
       latencyMs: latency,
     });
   } catch (error) {

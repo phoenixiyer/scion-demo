@@ -11,6 +11,7 @@ const state = {
   agents: {},
   completedCount: 0,
   totalTokens: 0,
+  totalPromptTokens: 0,
   chaosText: '',
   chaosChunkCount: 0,
   lastChaosAgent: null,
@@ -56,6 +57,7 @@ const metricTokens  = $('#metricTokens');
 const metricCost    = $('#metricCost');
 const metricAgents  = $('#metricAgents');
 const metricTime    = $('#metricTime');
+const metricPaf     = $('#metricPaf');
 const toastsEl      = $('#toasts');
 const chaosContainer = $('#chaosContainer');
 const chaosOutput   = $('#chaosOutput');
@@ -146,6 +148,7 @@ function createAgentCardHTML(id, agent, containerId) {
       </div>
       <div class="agent-footer">
         <span class="token-count" id="tokens-${id}">0 tokens</span>
+        <span class="agent-paf" id="paf-${id}" style="display:none;">1.0x PAF</span>
         <span class="agent-latency" id="latency-${id}"></span>
         <span class="agent-model" id="model-${id}">${agent.model}</span>
       </div>
@@ -220,6 +223,7 @@ function resetState() {
   state.agents = {};
   state.completedCount = 0;
   state.totalTokens = 0;
+  state.totalPromptTokens = 0;
   state.chaosText = '';
   state.chaosChunkCount = 0;
   state.lastChaosAgent = null;
@@ -301,8 +305,9 @@ function handleChaosEvent(event, data) {
     case 'agent-complete':
       state.completedCount++;
       state.totalTokens += (data.totalTokens || 0);
+      state.totalPromptTokens += (data.promptTokens || 0);
       updateMetrics();
-      // In chaos mode — no attribution. Just "something finished"
+      // In chaos mode - no attribution. Just "something finished"
       chaosCost.textContent = `$${((state.totalTokens / 1_000_000) * 0.25).toFixed(4)} (which agent? 🤷)`;
       break;
 
@@ -394,6 +399,10 @@ function handleScionEvent(event, data) {
 
     case 'agent-chunk':
       appendChunk(data.agentId, data.text);
+      break;
+      
+    case 'agent-skill':
+      spawnSkillToast(data.agentId, data.skill);
       break;
 
     case 'agent-complete':
@@ -511,6 +520,15 @@ function completeAgent(data) {
     statusEl.innerHTML = '<span class="status-dot"></span><span>Done</span>';
   }
 
+  // Update PAF
+  const pafEl = document.getElementById(`paf-${data.agentId}`);
+  if (pafEl) {
+    const promptTokens = data.promptTokens || 50;
+    const paf = (data.totalTokens / promptTokens).toFixed(2);
+    pafEl.textContent = `${paf}x PAF`;
+    pafEl.style.display = 'inline-block';
+  }
+
   // Update tokens
   const tokensEl = document.getElementById(`tokens-${data.agentId}`);
   if (tokensEl) tokensEl.textContent = `${(data.totalTokens || 0).toLocaleString()} tokens`;
@@ -522,6 +540,7 @@ function completeAgent(data) {
   // Update global metrics
   state.completedCount++;
   state.totalTokens += (data.totalTokens || 0);
+  state.totalPromptTokens += (data.promptTokens || 0);
   updateMetrics();
 
   const def = AGENT_DEFS[data.agentId];
@@ -569,15 +588,35 @@ function updateMetrics() {
   const cost = (state.totalTokens / 1_000_000) * 0.25;
   metricCost.textContent = cost.toFixed(4);
   metricAgents.textContent = `${state.completedCount} / 4`;
+  
+  const avgPaf = state.totalPromptTokens ? (state.totalTokens / state.totalPromptTokens).toFixed(2) : '1.00';
+  if (metricPaf) metricPaf.textContent = avgPaf + 'x';
 }
 
+// ─── Skill Notifications ─────────────────────────────────────────
+function spawnSkillToast(agentId, skill) {
+  const outputEl = document.getElementById(`output-${agentId}`);
+  if (!outputEl) return;
+  
+  const toast = document.createElement('div');
+  toast.className = 'skill-toast';
+  toast.innerHTML = `<span class="skill-icon">⚡</span><span>${escapeHtml(skill)}</span>`;
+  
+  outputEl.appendChild(toast);
+  
+  setTimeout(() => {
+    toast.classList.add('fade-out');
+    setTimeout(() => toast.remove(), 400);
+  }, 2500);
+}
+
+// ─── Toast Notifications ─────────────────────────────────────────
 function updateTimer() {
   if (!state.startTime) return;
   const elapsed = (Date.now() - state.startTime) / 1000;
   metricTime.textContent = elapsed.toFixed(1) + 's';
 }
 
-// ─── Toast Notifications ─────────────────────────────────────────
 function showToast(icon, message) {
   const toast = document.createElement('div');
   toast.className = 'toast';

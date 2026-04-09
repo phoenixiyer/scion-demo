@@ -632,6 +632,56 @@ body {
   color: var(--text-muted);
 }
 
+.agent-paf {
+  font-family: var(--font-mono);
+  font-size: 9px;
+  font-weight: 600;
+  color: var(--developer);
+  background: rgba(0, 255, 136, 0.1);
+  padding: 2px 6px;
+  border-radius: 4px;
+  border: 1px solid rgba(0, 255, 136, 0.2);
+}
+
+/* ─── Skill Notifications ───────────────────────────────────────── */
+.skill-toast {
+  position: absolute;
+  bottom: 16px;
+  left: 16px;
+  background: rgba(10, 10, 15, 0.9);
+  border: 1px solid var(--agent-color);
+  border-radius: var(--radius-sm);
+  padding: 8px 12px;
+  font-family: var(--font-mono);
+  font-size: 11px;
+  color: var(--text-primary);
+  backdrop-filter: blur(8px);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.4);
+  animation: skillSlideUp 0.3s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+  z-index: 10;
+  transform: translateY(10px);
+  opacity: 0;
+}
+
+.skill-toast.fade-out {
+  animation: skillFadeOut 0.4s ease forwards;
+}
+
+.skill-toast .skill-icon {
+  color: var(--agent-color);
+}
+
+@keyframes skillSlideUp {
+  to { transform: translateY(0); opacity: 1; }
+}
+
+@keyframes skillFadeOut {
+  to { transform: translateY(-10px); opacity: 0; }
+}
+
 /* ─── Metrics Bar ─────────────────────────────────────────────────── */
 .metrics-bar {
   display: flex;
