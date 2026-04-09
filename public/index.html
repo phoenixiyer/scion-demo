@@ -1,0 +1,140 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>SCION Demo — Multi-Agent Orchestration</title>
+  <meta name="description"
+    content="Real-time multi-agent orchestration demo inspired by Google SCION. Watch 4 specialized AI agents collaborate on coding tasks in isolated containers.">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link
+    href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap"
+    rel="stylesheet">
+  <link rel="stylesheet" href="style.css">
+  <link rel="icon"
+    href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>◆</text></svg>">
+</head>
+
+<body>
+  <div class="noise"></div>
+
+  <div class="app">
+    <!-- Header -->
+    <header class="header">
+      <div class="header-top">
+        <div class="logo">
+          <div class="logo-diamond">◆</div>
+          <div class="logo-text">
+            <h1>SCION</h1>
+            <span class="logo-badge">Multi-Agent Orchestration</span>
+          </div>
+        </div>
+        <a href="https://github.com/GoogleCloudPlatform/scion" target="_blank" class="github-link">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
+            <path
+              d="M12 0C5.37 0 0 5.37 0 12c0 5.31 3.435 9.795 8.205 11.385.6.105.825-.255.825-.57 0-.285-.015-1.23-.015-2.235-3.015.555-3.795-.735-4.035-1.41-.135-.345-.72-1.41-1.23-1.695-.42-.225-1.02-.78-.015-.795.945-.015 1.62.87 1.845 1.23 1.08 1.815 2.805 1.305 3.495.99.105-.78.42-1.305.765-1.605-2.67-.3-5.46-1.335-5.46-5.925 0-1.305.465-2.385 1.23-3.225-.12-.3-.54-1.53.12-3.18 0 0 1.005-.315 3.3 1.23.96-.27 1.98-.405 3-.405s2.04.135 3 .405c2.295-1.56 3.3-1.23 3.3-1.23.66 1.65.24 2.88.12 3.18.765.84 1.23 1.905 1.23 3.225 0 4.605-2.805 5.625-5.475 5.925.435.375.81 1.095.81 2.22 0 1.605-.015 2.895-.015 3.3 0 .315.225.69.825.57A12.02 12.02 0 0024 12c0-6.63-5.37-12-12-12z" />
+          </svg>
+          <span>View SCION</span>
+        </a>
+      </div>
+      <p class="subtitle">Watch 4 specialized AI agents collaborate on coding tasks : each in its own isolated
+        container, running in parallel.</p>
+    </header>
+
+    <!-- Task Input -->
+    <section class="task-section">
+      <div class="input-group">
+        <div class="input-wrapper">
+          <input type="text" id="taskInput" placeholder="Describe a coding task for the agent grove..."
+            autocomplete="off" spellcheck="false">
+          <button id="launchBtn" class="launch-btn">
+            <span class="btn-text">Launch Grove</span>
+            <span class="btn-icon">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"
+                stroke-linecap="round" stroke-linejoin="round">
+                <polygon points="5 3 19 12 5 21 5 3" />
+              </svg>
+            </span>
+          </button>
+        </div>
+        <div class="presets">
+          <span class="presets-label">Try:</span>
+          <button class="preset-btn"
+            data-task="Build a REST API for user authentication with JWT tokens and refresh token rotation">🔐 Auth
+            API</button>
+          <button class="preset-btn"
+            data-task="Create a real-time notification service using WebSockets with message persistence and delivery guarantees">📡
+            Notifications</button>
+          <button class="preset-btn"
+            data-task="Design a rate limiter middleware with sliding window algorithm and Redis backend">⚡ Rate
+            Limiter</button>
+        </div>
+      </div>
+    </section>
+
+    <!-- Grove Status -->
+    <div class="grove-status" id="groveStatus" style="display: none;">
+      <div class="grove-info">
+        <span class="grove-dot"></span>
+        <span class="grove-label">Grove</span>
+        <code class="grove-id" id="groveId">—</code>
+      </div>
+      <div class="grove-task" id="groveTask"></div>
+    </div>
+
+    <!-- Agent Grid -->
+    <section class="agents-grid" id="agentsGrid">
+      <!-- Cards injected by JS -->
+    </section>
+
+    <!-- Metrics Bar -->
+    <section class="metrics-bar" id="metricsBar" style="display: none;">
+      <div class="metric">
+        <div class="metric-icon">◈</div>
+        <div class="metric-content">
+          <span class="metric-value" id="metricTokens">0</span>
+          <span class="metric-label">Total Tokens</span>
+        </div>
+      </div>
+      <div class="metric-divider"></div>
+      <div class="metric">
+        <div class="metric-icon">$</div>
+        <div class="metric-content">
+          <span class="metric-value" id="metricCost">0.0000</span>
+          <span class="metric-label">Est. Cost (USD)</span>
+        </div>
+      </div>
+      <div class="metric-divider"></div>
+      <div class="metric">
+        <div class="metric-icon">▣</div>
+        <div class="metric-content">
+          <span class="metric-value" id="metricAgents">0 / 4</span>
+          <span class="metric-label">Agents Complete</span>
+        </div>
+      </div>
+      <div class="metric-divider"></div>
+      <div class="metric">
+        <div class="metric-icon">⏱</div>
+        <div class="metric-content">
+          <span class="metric-value" id="metricTime">0.0s</span>
+          <span class="metric-label">Wall Clock</span>
+        </div>
+      </div>
+    </section>
+
+    <!-- Toasts -->
+    <div class="toasts" id="toasts"></div>
+
+    <!-- Footer -->
+    <footer class="footer">
+      <p>Inspired by <a href="https://github.com/GoogleCloudPlatform/scion" target="_blank">Google SCION</a> — an
+        open-source hypervisor for AI agents. Powered by Gemini 2.5 Flash-Lite + GPT-4.1 Nano.</p>
+    </footer>
+  </div>
+
+  <script src="app.js"></script>
+</body>
+
+</html>
