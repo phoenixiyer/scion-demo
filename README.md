@@ -139,7 +139,7 @@ Open [http://localhost:3000](http://localhost:3000) - enter a coding task or cli
 | `OPENAI_API_KEY` | At least one | [OpenAI Platform](https://platform.openai.com/api-keys) API key |
 | `PORT` | No | Server port (default: 3000) |
 
-> 🔒 **The `.env` file is gitignored.** Your API keys are never committed.
+> **The `.env` file is gitignored by default.** 
 
 ## What This Is (and Isn't)
 
