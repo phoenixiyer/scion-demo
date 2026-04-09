@@ -5,11 +5,16 @@
 // ─── State ───────────────────────────────────────────────────────
 const state = {
   isRunning: false,
+  mode: 'chaos', // 'chaos' or 'scion'
   startTime: null,
   timerInterval: null,
   agents: {},
   completedCount: 0,
   totalTokens: 0,
+  chaosText: '',
+  chaosChunkCount: 0,
+  lastChaosAgent: null,
+  chaosWarningTimeout: null,
 };
 
 // ─── Agent Definitions ───────────────────────────────────────────
@@ -26,6 +31,18 @@ const HARNESS_LABELS = {
   'openai-codex': { label: 'OpenAI Codex', badge: '◇', badgeClass: 'harness-openai' },
 };
 
+// Chaos warning messages (simulated conflicts)
+const CHAOS_WARNINGS = [
+  '⚠️ CONFLICT: Two agents writing to auth.js simultaneously',
+  '🔴 COLLISION: Security agent overwriting Developer output',
+  '⚠️ RACE CONDITION: QA reading stale Architect design',
+  '🔴 CREDENTIAL LEAK: Shared .env exposed to all agents',
+  '⚠️ MERGE CONFLICT: Architect and Developer disagree on API contract',
+  '🔴 COST SPIKE: Cannot attribute $0.12 to any specific agent',
+  '⚠️ OUTPUT CORRUPTION: Interleaved streams — who wrote this?',
+  '🔴 DEADLOCK: Security scanning Developer code while Developer rewrites',
+];
+
 // ─── DOM References ──────────────────────────────────────────────
 const $ = (sel) => document.querySelector(sel);
 const taskInput     = $('#taskInput');
@@ -40,11 +57,17 @@ const metricCost    = $('#metricCost');
 const metricAgents  = $('#metricAgents');
 const metricTime    = $('#metricTime');
 const toastsEl      = $('#toasts');
+const chaosContainer = $('#chaosContainer');
+const chaosOutput   = $('#chaosOutput');
+const chaosWarnings = $('#chaosWarnings');
+const chaosCost     = $('#chaosCost');
+const subtitleText  = $('#subtitleText');
 
 // ─── Initialization ──────────────────────────────────────────────
 document.addEventListener('DOMContentLoaded', () => {
   renderPlaceholderCards();
   bindEvents();
+  setMode('chaos'); // Start in chaos mode to show the problem first
 });
 
 function bindEvents() {
@@ -59,6 +82,38 @@ function bindEvents() {
       taskInput.focus();
     });
   });
+
+  // Mode toggle
+  document.querySelectorAll('.mode-btn').forEach((btn) => {
+    btn.addEventListener('click', () => {
+      if (state.isRunning) return; // Don't switch while running
+      setMode(btn.dataset.mode);
+    });
+  });
+}
+
+// ─── Mode Switching ──────────────────────────────────────────────
+function setMode(mode) {
+  state.mode = mode;
+
+  // Update toggle buttons
+  document.querySelectorAll('.mode-btn').forEach((btn) => {
+    btn.classList.toggle('active', btn.dataset.mode === mode);
+  });
+
+  if (mode === 'chaos') {
+    chaosContainer.style.display = 'flex';
+    agentsGrid.style.display = 'none';
+    subtitleText.textContent = 'What happens when 4 AI agents share one workspace with zero isolation?';
+    launchBtn.querySelector('.btn-text').textContent = 'Run Without Isolation';
+    launchBtn.style.background = 'linear-gradient(135deg, #ff5050, #ff8c00)';
+  } else {
+    chaosContainer.style.display = 'none';
+    agentsGrid.style.display = 'grid';
+    subtitleText.textContent = 'Watch 4 specialized AI agents collaborate — each in its own isolated container, running in parallel.';
+    launchBtn.querySelector('.btn-text').textContent = 'Launch Grove';
+    launchBtn.style.background = 'linear-gradient(135deg, var(--architect), #00a8cc)';
+  }
 }
 
 // ─── Placeholder Cards ──────────────────────────────────────────
@@ -106,7 +161,12 @@ async function handleLaunch() {
   resetState();
   state.isRunning = true;
   launchBtn.disabled = true;
-  launchBtn.querySelector('.btn-text').textContent = 'Running...';
+
+  if (state.mode === 'chaos') {
+    launchBtn.querySelector('.btn-text').textContent = 'Chaos in progress...';
+  } else {
+    launchBtn.querySelector('.btn-text').textContent = 'Running...';
+  }
 
   try {
     const response = await fetch('/api/orchestrate', {
@@ -160,10 +220,21 @@ function resetState() {
   state.agents = {};
   state.completedCount = 0;
   state.totalTokens = 0;
+  state.chaosText = '';
+  state.chaosChunkCount = 0;
+  state.lastChaosAgent = null;
   state.startTime = Date.now();
 
-  // Reset cards
-  renderPlaceholderCards();
+  if (state.mode === 'chaos') {
+    // Reset chaos view
+    chaosOutput.innerHTML = '<div class="output-text"><span class="chaos-cursor"></span></div>';
+    chaosWarnings.innerHTML = '';
+    chaosCost.textContent = '$??? total (no breakdown)';
+    chaosContainer.classList.remove('active');
+  } else {
+    // Reset SCION cards
+    renderPlaceholderCards();
+  }
 
   // Show UI elements
   groveStatus.style.display = 'none';
@@ -178,7 +249,16 @@ function resetState() {
 function endRun() {
   state.isRunning = false;
   launchBtn.disabled = false;
-  launchBtn.querySelector('.btn-text').textContent = 'Launch Grove';
+
+  if (state.mode === 'chaos') {
+    launchBtn.querySelector('.btn-text').textContent = 'Run Without Isolation';
+    // Remove chaos cursor
+    const cursor = chaosOutput.querySelector('.chaos-cursor');
+    if (cursor) cursor.remove();
+  } else {
+    launchBtn.querySelector('.btn-text').textContent = 'Launch Grove';
+  }
+
   if (state.timerInterval) {
     clearInterval(state.timerInterval);
     state.timerInterval = null;
@@ -188,6 +268,114 @@ function endRun() {
 
 // ─── Event Handlers ──────────────────────────────────────────────
 function handleEvent(event, data) {
+  if (state.mode === 'chaos') {
+    handleChaosEvent(event, data);
+  } else {
+    handleScionEvent(event, data);
+  }
+}
+
+// ─── CHAOS MODE Event Handlers ───────────────────────────────────
+function handleChaosEvent(event, data) {
+  switch (event) {
+    case 'grove-init':
+      groveStatus.style.display = 'flex';
+      groveIdEl.textContent = '⚠️ NO GROVE (shared workspace)';
+      groveTaskEl.textContent = data.task;
+      showToast('💥', 'All agents dumped into shared workspace');
+      break;
+
+    case 'agent-spawn':
+      chaosContainer.classList.add('active');
+      // Don't show individual agent info — that's the point
+      break;
+
+    case 'agent-start':
+      state.agents[data.agentId] = state.agents[data.agentId] || { text: '', tokens: 0, status: 'active' };
+      break;
+
+    case 'agent-chunk':
+      appendChaosChunk(data.agentId, data.text);
+      break;
+
+    case 'agent-complete':
+      state.completedCount++;
+      state.totalTokens += (data.totalTokens || 0);
+      updateMetrics();
+      // In chaos mode — no attribution. Just "something finished"
+      chaosCost.textContent = `$${((state.totalTokens / 1_000_000) * 0.25).toFixed(4)} (which agent? 🤷)`;
+      break;
+
+    case 'agent-error':
+      state.completedCount++;
+      updateMetrics();
+      // Error with no attribution
+      showToast('⚠️', `An agent failed — but which one? No isolation = no clue.`);
+      break;
+
+    case 'orchestration-complete':
+      showToast('💥', `Done — but look at that output. Can you tell who wrote what?`);
+      // Fire one final warning
+      spawnChaosWarning('🔴 RESULT: Interleaved output is unusable. Good luck debugging.');
+      break;
+  }
+}
+
+function appendChaosChunk(agentId, text) {
+  state.chaosChunkCount++;
+
+  // Every ~8 chunks from a different agent, trigger a warning
+  if (state.lastChaosAgent && state.lastChaosAgent !== agentId && state.chaosChunkCount % 8 === 0) {
+    const warning = CHAOS_WARNINGS[Math.floor(Math.random() * CHAOS_WARNINGS.length)];
+    spawnChaosWarning(warning);
+
+    // Trigger glitch effect
+    chaosOutput.classList.add('glitch');
+    setTimeout(() => chaosOutput.classList.remove('glitch'), 150);
+  }
+
+  state.lastChaosAgent = agentId;
+
+  const textEl = chaosOutput.querySelector('.output-text');
+  if (!textEl) return;
+
+  // Append with agent color but NO label — you can't tell who wrote what
+  const span = document.createElement('span');
+  span.className = 'chaos-agent-text';
+  span.dataset.agent = agentId;
+  span.textContent = text;
+
+  // Insert before cursor
+  const cursor = textEl.querySelector('.chaos-cursor');
+  if (cursor) {
+    textEl.insertBefore(span, cursor);
+  } else {
+    textEl.appendChild(span);
+  }
+
+  chaosOutput.scrollTop = chaosOutput.scrollHeight;
+}
+
+function spawnChaosWarning(message) {
+  const el = document.createElement('div');
+  el.className = 'chaos-warning';
+  el.textContent = message;
+  chaosWarnings.appendChild(el);
+
+  // Remove after 4 seconds
+  setTimeout(() => {
+    el.classList.add('fade-out');
+    setTimeout(() => el.remove(), 500);
+  }, 4000);
+
+  // Keep max 3 warnings
+  while (chaosWarnings.children.length > 3) {
+    chaosWarnings.firstChild.remove();
+  }
+}
+
+// ─── SCION MODE Event Handlers ───────────────────────────────────
+function handleScionEvent(event, data) {
   switch (event) {
     case 'grove-init':
       groveStatus.style.display = 'flex';
@@ -263,6 +451,9 @@ function activateAgent(agentId) {
   if (!card) return;
 
   card.classList.add('active');
+  if (!state.agents[agentId]) {
+    state.agents[agentId] = { tokens: 0, text: '', status: 'active' };
+  }
   state.agents[agentId].status = 'active';
 
   // Update status badge

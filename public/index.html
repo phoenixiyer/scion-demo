@@ -4,7 +4,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>SCION Demo — Multi-Agent Orchestration</title>
+  <title>SCION Demo - Multi-Agent Orchestration</title>
   <meta name="description"
     content="Real-time multi-agent orchestration demo inspired by Google SCION. Watch 4 specialized AI agents collaborate on coding tasks in isolated containers.">
   <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -39,9 +39,26 @@
           <span>View SCION</span>
         </a>
       </div>
-      <p class="subtitle">Watch 4 specialized AI agents collaborate on coding tasks : each in its own isolated
+      <p class="subtitle" id="subtitleText">Watch 4 specialized AI agents collaborate on coding tasks, each in its own
+        isolated
         container, running in parallel.</p>
     </header>
+
+    <!-- Mode Toggle -->
+    <section class="mode-toggle-section">
+      <div class="mode-toggle" id="modeToggle">
+        <button class="mode-btn active" id="modeChaos" data-mode="chaos">
+          <span class="mode-icon">💥</span>
+          <span class="mode-label">Traditional AI</span>
+          <span class="mode-desc">Shared workspace, no isolation</span>
+        </button>
+        <button class="mode-btn" id="modeScion" data-mode="scion">
+          <span class="mode-icon">◆</span>
+          <span class="mode-label">SCION Isolation</span>
+          <span class="mode-desc">Per-agent containers &amp; telemetry</span>
+        </button>
+      </div>
+    </section>
 
     <!-- Task Input -->
     <section class="task-section">
@@ -79,12 +96,37 @@
       <div class="grove-info">
         <span class="grove-dot"></span>
         <span class="grove-label">Grove</span>
-        <code class="grove-id" id="groveId">—</code>
+        <code class="grove-id" id="groveId">-</code>
       </div>
       <div class="grove-task" id="groveTask"></div>
     </div>
 
-    <!-- Agent Grid -->
+    <!-- Chaos Mode: Single shared output -->
+    <section class="chaos-container" id="chaosContainer">
+      <div class="chaos-warnings" id="chaosWarnings"></div>
+      <div class="chaos-header">
+        <div class="chaos-header-left">
+          <span class="chaos-icon">📂</span>
+          <span class="chaos-title">shared-workspace</span>
+          <span class="chaos-cred">🔑 .env (shared)</span>
+        </div>
+        <div class="chaos-header-right">
+          <span class="chaos-agents-label">4 agents • 1 output • 0 isolation</span>
+        </div>
+      </div>
+      <div class="chaos-output" id="chaosOutput">
+        <div class="output-placeholder">All agents will stream here simultaneously...<br>No isolation. No attribution.
+          Pure chaos.</div>
+      </div>
+      <div class="chaos-footer">
+        <span class="chaos-metric">🔴 No per-agent attribution</span>
+        <span class="chaos-metric">🔴 Shared credentials</span>
+        <span class="chaos-metric">🔴 Interleaved output</span>
+        <span class="chaos-metric-cost" id="chaosCost">$??? total (no breakdown)</span>
+      </div>
+    </section>
+
+    <!-- Agent Grid (SCION mode) -->
     <section class="agents-grid" id="agentsGrid">
       <!-- Cards injected by JS -->
     </section>
@@ -129,7 +171,7 @@
 
     <!-- Footer -->
     <footer class="footer">
-      <p>Inspired by <a href="https://github.com/GoogleCloudPlatform/scion" target="_blank">Google SCION</a> — an
+      <p>Inspired by <a href="https://github.com/GoogleCloudPlatform/scion" target="_blank">Google SCION</a> - an
         open-source hypervisor for AI agents. Powered by Gemini 2.5 Flash-Lite + GPT-4.1 Nano.</p>
     </footer>
   </div>

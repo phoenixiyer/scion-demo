@@ -1,6 +1,6 @@
 # 🔮 SCION Multi-Agent Orchestration Demo
 
-A real-time visual demo of **vendor-agnostic multi-agent orchestration** - the core concept behind [Google SCION](https://github.com/GoogleCloudPlatform/scion), an open-source "hypervisor for AI agents."
+A real-time visual demo of **vendor-agnostic multi-agent orchestration** : the core concept behind [Google SCION](https://github.com/GoogleCloudPlatform/scion), an open-source "hypervisor for AI agents."
 
 Watch 4 specialized AI agents work on the same coding task **simultaneously**, each powered by a different AI provider and model, exactly the kind of mixed-vendor orchestration SCION enables.
 
@@ -30,7 +30,7 @@ This demo makes that pattern tangible:
 
 ## Agents & Models
 
-The demo runs **2 different AI providers in parallel** — the headline feature of SCION's harness architecture:
+The demo runs **2 different AI providers in parallel** : the headline feature of SCION's harness architecture:
 
 | Agent | Role | Harness | Model | Pricing |
 |-------|------|---------|-------|---------|
@@ -53,13 +53,13 @@ npm install
 
 # 3. Configure API keys
 cp .env.example .env
-# Edit .env — add your Gemini and/or OpenAI keys
+# Edit .env - add your Gemini and/or OpenAI keys
 
 # 4. Run
 npm run dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) — enter a coding task or click a preset.
+Open [http://localhost:3000](http://localhost:3000) - enter a coding task or click a preset.
 
 > **Keys are optional per provider.** If you only have a Gemini key, only the Gemini-powered agents will run (and vice versa). Both keys = full 4-agent demo.
 
@@ -150,4 +150,4 @@ For the real thing: [github.com/GoogleCloudPlatform/scion](https://github.com/Go
 
 ## License
 
-Apache 2.0 — Same as Google SCION.
+Apache 2.0 - Same as Google SCION.

@@ -26,7 +26,7 @@ const AGENTS = [
 Your role: Produce a concise system design for the given task.
 Include: component architecture, API contracts (with actual interface signatures), data models, and 3 key design decisions with rationale.
 Format: Clean markdown with headers. Use code blocks for interfaces.
-Constraint: Be specific and practical — no generic advice. Under 400 words.`,
+Constraint: Be specific and practical - no generic advice. Under 400 words.`,
   },
   {
     id: 'developer',
@@ -39,7 +39,7 @@ Constraint: Be specific and practical — no generic advice. Under 400 words.`,
     systemPrompt: `You are a senior software developer operating as an isolated agent in a multi-agent development grove (powered by Google SCION).
 Your role: Implement the core solution with clean, production-ready code.
 Choose the most appropriate language/framework. Include inline comments for complex logic.
-Deliver working code — not pseudocode. Focus on the core implementation.
+Deliver working code - not pseudocode. Focus on the core implementation.
 Constraint: Ship the most critical 2-3 files. Under 400 words.`,
   },
   {
