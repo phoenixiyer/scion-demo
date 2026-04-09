@@ -21,8 +21,8 @@ SCION's answer: **treat agents like VMs** : isolate them in containers, give eac
 
 This demo features a built-in **Mode Toggle** so you can see the problem and the solution side-by-side:
 
-*   💥 **Traditional AI (The Problem):** Watch what happens when you dump 4 agents into the same shared workspace. No isolation, no attribution, shared credentials, and text streams violently interlacing. It is absolute chaos.
-*   🌿 **SCION Isolation (The Solution):** Switch to SCION mode to see those same 4 agents smoothly sandboxed into their own containers with independent telemetry, identities, and vendor harnesses.
+*   **Traditional AI (The Problem):** Watch what happens when you dump 4 agents into the same shared workspace. No isolation, no attribution, shared credentials, and text streams violently interlacing. It is absolute chaos.
+*   **SCION Isolation (The Solution):** Switch to SCION mode to see those same 4 agents smoothly sandboxed into their own containers with independent telemetry, identities, and vendor harnesses.
 
 This demo makes that pattern tangible:
 
@@ -153,7 +153,7 @@ Open [http://localhost:3000](http://localhost:3000) - enter a coding task or cli
 - A production multi-agent system
 - A replacement for SCION's actual isolation guarantees
 
-For the real thing: [github.com/GoogleCloudPlatform/scion](https://github.com/GoogleCloudPlatform/scion)
+For more details: [github.com/GoogleCloudPlatform/scion](https://github.com/GoogleCloudPlatform/scion)
 
 ## License
 
